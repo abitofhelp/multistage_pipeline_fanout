@@ -1,19 +1,19 @@
 # multistage_pipeline_fanout
 
-A high-performance data processing pipeline implementation in Go that provides efficient file processing with parallel compression and encryption.
-
 ## Overview
 
-multistage_pipeline_fanout implements a multi-stage processing pipeline with concurrent execution of compression and encryption operations for improved performance. The pipeline:
+multistage_pipeline_fanout implements is a multi-stage processing pipeline with parallel execution of compression and encryption operations for improved performance.
 
-- Reads data from an input file in configurable chunks
-- Compresses the data using parallel workers
-- Encrypts the compressed data using parallel workers
-- Writes the processed data to an output file
-- Calculates SHA256 checksums on the fly for the input and output files to ensure data integrity
+The pipeline features:
+
+- Parallel compression and encryption for maximum throughput
+- Concurrent processing architecture using Go routines and channels
+- Tink-based encryption for strong, standardized security using parallel workers
+- On-the-fly Byte-level counting to monitor data throughput
+- On-the-fly SHA-256 checksums to ensure end-to-end data integrity for both input and output files
+- Designed for performance, modularity, reliability, proper resource management, including graceful shutdown handling.  
 - Collects detailed statistics about the processing
-
-The application is designed with a focus on performance, reliability, and proper resource management, including graceful shutdown handling.
+- This application showcases idiomatic Go concurrency and parallelism to accelerate secure data processing in modern workloads.
 
 ## Project Structure
 

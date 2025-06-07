@@ -72,9 +72,9 @@ func Stage(
 				logger.Warn("Read operation stopped by unknown context error", zap.Error(err))
 			}
 			return
-		case <-time.After(5 * time.Second): // Timeout for read operation
+		case <-time.After(2 * time.Second): // Timeout for read operation
 			// Create a custom error for blocked read
-			baseErr := fmt.Errorf("%w: timeout after waiting 5 seconds for read operation",
+			baseErr := fmt.Errorf("%w: timeout after waiting 2 seconds for read operation",
 				customErrors.ErrTimeout)
 
 			timeoutErr := customErrors.NewPipelineError(
@@ -155,9 +155,9 @@ func Stage(
 				logger.Warn("Sending to compression stage stopped by unknown context error", zap.Error(err))
 			}
 			return
-		case <-time.After(5 * time.Second): // Timeout for sending to next stage
+		case <-time.After(2 * time.Second): // Timeout for sending to next stage
 			// Create a custom error for blocked pipeline
-			baseErr := fmt.Errorf("%w: timeout after waiting 5 seconds to send to compression stage",
+			baseErr := fmt.Errorf("%w: timeout after waiting 2 seconds to send to compression stage",
 				customErrors.ErrPipelineBlocked)
 
 			blockedErr := customErrors.NewPipelineError(

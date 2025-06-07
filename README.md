@@ -1,5 +1,9 @@
 # multistage_pipeline_fanout
 
+[![Go Version](https://img.shields.io/badge/Go-1.24-blue.svg)](https://golang.org/doc/go1.24)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Test Coverage](https://img.shields.io/badge/Coverage-59.1%25-yellow.svg)](coverage.html)
+
 A high-performance data processing pipeline implementation in Go that provides efficient file processing with parallel compression and encryption.
 
 ## Overview
@@ -68,7 +72,7 @@ This separation allows for:
 
 ### Prerequisites
 
-- Go 1.21 or later
+- Go 1.24 or later
 - Make
 
 ### Building and Running
@@ -117,6 +121,20 @@ make lint
 # Run security check
 make sec
 
+# Run vulnerability scanning
+make vuln
+
+# Check Go version compatibility
+make check-go-version
+
+# Generate CHANGELOG
+make changelog
+
+# Docker operations
+make docker-build  # Build Docker image
+make docker-run    # Run in Docker container
+make docker        # Build and run in Docker
+
 # Generate and serve documentation
 make doc
 ```
@@ -142,6 +160,21 @@ make mocks
 # Install the binary to GOPATH/bin
 make install
 
+# Run vulnerability scanning
+make vuln
+
+# Check Go version compatibility
+make check-go-version
+
+# Generate CHANGELOG
+make changelog
+
+# Build Docker image
+make docker-build
+
+# Run in Docker container
+make docker-run
+
 # Show all available commands
 make help
 ```
@@ -159,6 +192,31 @@ The application requires two command-line arguments:
 2. `output_file_path`: Path where the processed data will be written
 
 The application processes the input file through a pipeline that includes compression and encryption, then writes the result to the output file.
+
+### Running with Docker
+
+The project includes Docker support for containerized execution:
+
+```bash
+# Build the Docker image
+make docker-build
+
+# Run the application in a Docker container
+make docker-run
+
+# Or do both in one command
+make docker
+```
+
+You can also use Docker commands directly:
+
+```bash
+# Build the image
+docker build -t multistage_pipeline_fanout:latest .
+
+# Run the container
+docker run --rm -v $(pwd)/input_file.txt:/app/input.txt -v $(pwd):/app/output multistage_pipeline_fanout:latest input.txt /app/output/output.bin
+```
 
 ### Configuration
 
@@ -320,8 +378,20 @@ If you're experiencing performance issues:
 3. Ensure your storage devices have sufficient I/O performance
 4. Run with `GODEBUG=gctrace=1` to monitor garbage collection overhead
 
+## Dependencies
+
+This project relies on the following key dependencies:
+
+- [github.com/andybalholm/brotli](https://github.com/andybalholm/brotli) - Brotli compression algorithm implementation
+- [github.com/google/tink/go](https://github.com/google/tink/go) - Cryptographic API providing secure implementations of common cryptographic primitives
+- [github.com/dustin/go-humanize](https://github.com/dustin/go-humanize) - Formatters for units to human-friendly sizes
+- [go.uber.org/zap](https://github.com/uber-go/zap) - Structured, leveled logging
+- [github.com/stretchr/testify](https://github.com/stretchr/testify) - Testing toolkit
+
+For a complete list of dependencies, see the [go.mod](go.mod) file.
+
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-Copyright (c) 2025 A Bit of Help, Inc.
+Copyright (c) 2023 A Bit of Help, Inc.

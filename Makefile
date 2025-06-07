@@ -14,9 +14,11 @@ GOFMT=$(GO) fmt
 GOLINT=golangci-lint
 GOSEC=gosec
 GODOC=godoc
+GOVULNCHECK=govulncheck
 GOBENCHMARK=$(GO) test -bench=. -benchmem
 INPUT_FILE=test.txt
 OUTPUT_FILE=output.bin
+MIN_GO_VERSION=1.24
 
 # Build settings
 BUILD_DIR=build
@@ -28,7 +30,7 @@ LDFLAGS=-ldflags "-X main.version=$(VERSION) -X main.buildTime=$(BUILD_TIME) -X 
 # Test settings
 COVERAGE_FILE=coverage.out
 COVERAGE_HTML=coverage.html
-TEST_TIMEOUT=5m
+TEST_TIMEOUT=1m
 
 # Colors for terminal output
 YELLOW=\033[0;33m
@@ -36,7 +38,7 @@ GREEN=\033[0;32m
 RED=\033[0;31m
 NC=\033[0m # No Color
 
-.PHONY: all build clean test test-all test-ci test-race test-integration coverage lint fmt vet run help deps update-deps sec doc install verify tidy bench outdated mocks
+.PHONY: all build clean test test-all test-ci test-race test-integration coverage lint fmt vet run help deps update-deps sec doc install verify tidy bench outdated mocks vuln check-go-version changelog docker docker-build docker-run
 
 # Default target
 all: clean lint test build
@@ -205,6 +207,14 @@ deps:
 		echo "Installing godoc..."; \
 		$(GO) install golang.org/x/tools/cmd/godoc@latest; \
 	fi
+	@if ! command -v $(GOVULNCHECK) > /dev/null; then \
+		echo "Installing govulncheck..."; \
+		$(GO) install golang.org/x/vuln/cmd/govulncheck@latest; \
+	fi
+	@if ! command -v git-chglog > /dev/null; then \
+		echo "Installing git-chglog..."; \
+		$(GO) install github.com/git-chglog/git-chglog/cmd/git-chglog@latest; \
+	fi
 	@echo "${GREEN}Dependencies installed!${NC}"
 
 # Update dependencies
@@ -272,6 +282,55 @@ install: build
 	cp $(BUILD_DIR)/$(BINARY_NAME) $$(go env GOPATH)/bin/
 	@echo "${GREEN}Installation complete! $(BINARY_NAME) is now available in your PATH.${NC}"
 
+# Vulnerability scanning
+vuln:
+	@echo "${YELLOW}Running vulnerability scanning...${NC}"
+	@if command -v $(GOVULNCHECK) > /dev/null; then \
+		$(GOVULNCHECK) ./...; \
+	else \
+		echo "${RED}govulncheck not installed. Run 'go install golang.org/x/vuln/cmd/govulncheck@latest' to install.${NC}"; \
+		exit 1; \
+	fi
+	@echo "${GREEN}Vulnerability scanning complete!${NC}"
+
+# Check Go version
+check-go-version:
+	@echo "${YELLOW}Checking Go version...${NC}"
+	@GO_VERSION=$$(go version | awk '{print $$3}' | sed 's/go//'); \
+	if [ "$$(printf '%s\n' "$(MIN_GO_VERSION)" "$$GO_VERSION" | sort -V | head -n1)" != "$(MIN_GO_VERSION)" ]; then \
+		echo "${RED}Go version $$GO_VERSION is less than required version $(MIN_GO_VERSION)${NC}"; \
+		exit 1; \
+	else \
+		echo "${GREEN}Go version $$GO_VERSION is compatible with required version $(MIN_GO_VERSION)${NC}"; \
+	fi
+
+# Generate CHANGELOG
+changelog:
+	@echo "${YELLOW}Generating CHANGELOG...${NC}"
+	@if command -v git-chglog > /dev/null; then \
+		git-chglog -o CHANGELOG.md; \
+	else \
+		echo "${RED}git-chglog not installed. Run 'go install github.com/git-chglog/git-chglog/cmd/git-chglog@latest' to install.${NC}"; \
+		echo "Generating simple changelog..."; \
+		echo "# Changelog" > CHANGELOG.md; \
+		echo "" >> CHANGELOG.md; \
+		git log --pretty=format:"## %ad - %h%n%s%n%b" --date=short >> CHANGELOG.md; \
+	fi
+	@echo "${GREEN}CHANGELOG generated!${NC}"
+
+# Docker targets
+docker-build:
+	@echo "${YELLOW}Building Docker image...${NC}"
+	docker build -t $(BINARY_NAME):$(VERSION) .
+	@echo "${GREEN}Docker image built!${NC}"
+
+docker-run:
+	@echo "${YELLOW}Running Docker container...${NC}"
+	docker run --rm -v $(PWD)/$(INPUT_FILE):/app/$(INPUT_FILE) -v $(PWD):/app/output $(BINARY_NAME):$(VERSION) $(INPUT_FILE) /app/output/$(OUTPUT_FILE)
+	@echo "${GREEN}Docker container execution complete!${NC}"
+
+docker: docker-build docker-run
+
 # Help target
 help:
 	@echo "Available targets:"
@@ -297,6 +356,12 @@ help:
 	@echo "  update-deps  - Update dependencies"
 	@echo "  outdated     - Check for outdated dependencies"
 	@echo "  sec          - Run security check"
+	@echo "  vuln         - Run vulnerability scanning"
+	@echo "  check-go-version - Check Go version compatibility"
+	@echo "  changelog    - Generate CHANGELOG"
+	@echo "  docker-build - Build Docker image"
+	@echo "  docker-run   - Run Docker container"
+	@echo "  docker       - Build and run Docker container"
 	@echo "  doc          - Generate and serve documentation"
 	@echo "  install      - Install the binary to GOPATH/bin"
 	@echo "  tidy         - Run go mod tidy"
